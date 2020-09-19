@@ -54,17 +54,19 @@
  
    SET(H5_USE_16_API 1)
    OPTION(NC_ENABLE_HDF_16_API "Enable HDF5 1.6.x Compatibility(Required)" ON)
-@@ -789,8 +796,8 @@ ENDIF(USE_HDF5 OR ENABLE_NETCDF_4)
+@@ -789,8 +796,10 @@ ENDIF(USE_HDF5 OR ENABLE_NETCDF_4)
  
  # See if we have libcurl
  FIND_PACKAGE(CURL)
 -ADD_DEFINITIONS(-DCURL_STATICLIB=1)
  INCLUDE_DIRECTORIES(${CURL_INCLUDE_DIRS})
-+link_libraries(CONAN_PKG::libcurl)
++if(ENABLE_DAP OR ENABLE_BYTERANGE)
++  link_libraries(CONAN_PKG::libcurl)
++endif()
  
  # Check to see if CURLOPT_USERNAME is defined.
  # It is present starting version 7.19.1.
-@@ -854,7 +861,7 @@ ENDIF()
+@@ -854,7 +863,7 @@ ENDIF()
  # Option to support byte-range reading of remote datasets
  OPTION(ENABLE_BYTERANGE "Enable byte-range access to remote datasets.." OFF)
  
