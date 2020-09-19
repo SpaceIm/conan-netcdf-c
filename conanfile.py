@@ -20,8 +20,8 @@ class NetcdfConan(ConanFile):
         "fPIC": [True, False],
         "build_utilities": [True, False],
         "netcdf4": [True, False],
-        "hdf4": [True, False],
-        "hdf5": [True, False],
+        "with_hdf4": [True, False],
+        "with_hdf5": [True, False],
         "dap": [True, False],
         "parallel": [True, False],
     }
@@ -30,8 +30,8 @@ class NetcdfConan(ConanFile):
         "fPIC": True,
         "build_utilities": True,
         "netcdf4": True,
-        "hdf4": False,
-        "hdf5": True,
+        "with_hdf4": False,
+        "with_hdf5": True,
         "dap": True,
         "parallel": False,
     }
@@ -56,17 +56,17 @@ class NetcdfConan(ConanFile):
         del self.settings.compiler.cppstd
         del self.settings.compiler.libcxx
 
-        if self.options.netcdf4 and not self.options.hdf5:
+        if self.options.netcdf4 and not self.options.with_hdf5:
             raise ConanInvalidConfiguration("netcdf4 requires hdf5")
         if not self.options.netcdf4:
-            if self.options.hdf4:
+            if self.options.with_hdf4:
                 raise ConanInvalidConfiguration("netcdf4 is required for hdf4 features")
             if self.options.parallel:
                 raise ConanInvalidConfiguration("netcdf4 is required for parallel IO")
         self._strict_options_requirements()
 
     def _strict_options_requirements(self):
-        if self.options.hdf5:
+        if self.options.with_hdf5:
             self.options["hdf5"].with_zlib = True
             self.options["hdf5"].hl = True
             if self.options.parallel:
@@ -74,9 +74,9 @@ class NetcdfConan(ConanFile):
                 self.options["hdf5"].parallel = True # TODO: option not yet available in hdf5 recipe, requires openmpi in CCI
 
     def requirements(self):
-        if self.options.hdf4:
+        if self.options.with_hdf4:
             self.requires("hdf4/4.2.15")
-        if self.options.hdf5:
+        if self.options.with_hdf5:
             self.requires("hdf5/1.12.0")
         if self.options.dap:
             self.requires("libcurl/7.72.0")
@@ -84,7 +84,7 @@ class NetcdfConan(ConanFile):
             self.requires("openmpi/4.0.3")
 
     def _validate_dependency_graph(self):
-        if self.options.hdf5:
+        if self.options.with_hdf5:
             if not (self.options["hdf5"].with_zlib and self.options["hdf5"].hl):
                 raise ConanInvalidConfiguration("netcdf-c requires hdf5 with zlib and hl")
             if self.options.parallel and not self.options["hdf5"].parallel:
@@ -111,16 +111,16 @@ class NetcdfConan(ConanFile):
         cmake.definitions["BUILD_UTILITIES"] = self.options.build_utilities
         cmake.definitions["ENABLE_MMAP"] = True
         cmake.definitions["ENABLE_EXAMPLES"] = False
-        cmake.definitions["ENABLE_HDF4"] = self.options.hdf4
-        if self.options.hdf4:
+        cmake.definitions["ENABLE_HDF4"] = self.options.with_hdf4
+        if self.options.with_hdf4:
             cmake.definitions["ENABLE_HDF4_FILE_TESTS"] = False
         cmake.definitions["ENABLE_NETCDF_4"] = self.options.netcdf4
         cmake.definitions["ENABLE_LOGGING"] = False
         cmake.definitions["ENABLE_SET_LOG_LEVEL_FUNC"] = True
         cmake.definitions["ENABLE_STRICT_NULL_BYTE_HEADER_PADDING"] = False
         cmake.definitions["ENABLE_RPC"] = False
-        cmake.definitions["USE_HDF5"] = self.options.hdf5
-        if self.options.hdf5:
+        cmake.definitions["USE_HDF5"] = self.options.with_hdf5
+        if self.options.with_hdf5:
             cmake.definitions["NC_ENABLE_HDF_16_API"] = True
         cmake.definitions["ENABLE_DAP"] = self.options.dap
         cmake.definitions["ENABLE_BYTERANGE"] = False
@@ -172,10 +172,10 @@ class NetcdfConan(ConanFile):
         self.cpp_info.components["netcdf"].names["cmake_find_package"] = "netcdf"
         self.cpp_info.components["netcdf"].names["cmake_find_package_multi"] = "netcdf"
         self.cpp_info.components["netcdf"].names["pkg_config"] = "netcdf"
-        self.cpp_info.components["netcdf"].libs = tools.collect_libs(self)
-        if self.options.hdf4:
+        self.cpp_info.components["netcdf"].libs = ["netcdf"]
+        if self.options.with_hdf4:
             self.cpp_info.components["netcdf"].requires.append("hdf4::hdf4")
-        if self.options.hdf5:
+        if self.options.with_hdf5:
             self.cpp_info.components["netcdf"].requires.append("hdf5::hdf5") # TODO: when components available in hdf5 recipe => requires.extend([hdf5::hl, hdf5::c])
         if self.options.dap:
             self.cpp_info.components["netcdf"].requires.append("libcurl::libcurl")
