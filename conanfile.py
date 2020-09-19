@@ -185,3 +185,8 @@ class NetcdfConan(ConanFile):
             self.cpp_info.components["netcdf"].system_libs = ["m"]
         if self.settings.os == "Windows" and self.options.shared:
             self.cpp_info.components["netcdf"].defines.append("DLL_NETCDF")
+
+        if self.options.build_utilities:
+            bin_path = os.path.join(self.package_folder, "bin")
+            self.output.info("Appending PATH environment variable: {}".format(bin_path))
+            self.env_info.PATH.append(bin_path)
