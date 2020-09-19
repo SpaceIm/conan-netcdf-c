@@ -63,13 +63,15 @@ class NetcdfConan(ConanFile):
                 raise ConanInvalidConfiguration("netcdf4 is required for hdf4 features")
             if self.options.parallel:
                 raise ConanInvalidConfiguration("netcdf4 is required for parallel IO")
+        self._strict_options_requirements()
 
+    def _strict_options_requirements(self):
         if self.options.hdf5:
             self.options["hdf5"].with_zlib = True
             self.options["hdf5"].hl = True
-        if self.options.parallel:
-            raise ConanInvalidConfiguration("parallel option requires openmpi which is not yet available in CCI")
-            self.options["hdf5"].parallel = True # TODO: option not yet available in hdf5 recipe, requires openmpi in CCI
+            if self.options.parallel:
+                raise ConanInvalidConfiguration("parallel option requires openmpi which is not yet available in CCI")
+                self.options["hdf5"].parallel = True # TODO: option not yet available in hdf5 recipe, requires openmpi in CCI
 
     def requirements(self):
         if self.options.hdf4:
@@ -81,11 +83,19 @@ class NetcdfConan(ConanFile):
         if self.options.parallel:
             self.requires("openmpi/4.0.3")
 
+    def _validate_dependency_graph(self):
+        if self.options.hdf5:
+            if not (self.options["hdf5"].with_zlib and self.options["hdf5"].hl):
+                raise ConanInvalidConfiguration("netcdf-c requires hdf5 with zlib and hl")
+            if self.options.parallel and not self.options["hdf5"].parallel:
+                raise ConanInvalidConfiguration("netcdf-c parallel requires hdf5 parallel")
+
     def source(self):
         tools.get(**self.conan_data["sources"][self.version])
         os.rename(self.name + "-" + self.version, self._source_subfolder)
 
     def build(self):
+        self._validate_dependency_graph()
         for patch in self.conan_data.get("patches", {}).get(self.version, []):
             tools.patch(**patch)
         cmake = self._configure_cmake()
