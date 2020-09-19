@@ -1,3 +1,4 @@
+import glob
 import os
 
 from conans import ConanFile, CMake, tools
@@ -159,11 +160,18 @@ class NetcdfConan(ConanFile):
         self.copy("COPYRIGHT", dst="licenses", src=self._source_subfolder)
         cmake = self._configure_cmake()
         cmake.install()
-        os.remove(os.path.join(self.package_folder, "bin", "nc-config"))
+        if self.options.build_utilities or (self.options.shared and self.settings.os == "Windows"):
+            os.remove(os.path.join(self.package_folder, "bin", "nc-config"))
+        else:
+            tools.rmdir(os.path.join(self.package_folder, "bin"))
         tools.rmdir(os.path.join(self.package_folder, "lib", "cmake"))
         tools.rmdir(os.path.join(self.package_folder, "lib", "pkgconfig"))
         os.remove(os.path.join(self.package_folder, "lib", "libnetcdf.settings"))
         tools.rmdir(os.path.join(self.package_folder, "share"))
+        if self.options.shared and self.settings.compiler == "Visual Studio":
+            for dll_pattern_to_remove in ["concrt*.dll", "msvcp*.dll", "vcruntime*.dll"]:
+                for dll_to_remove in glob.glob(os.path.join(self.package_folder, "bin", dll_pattern_to_remove)):
+                    os.remove(dll_to_remove)
 
     def package_info(self):
         self.cpp_info.names["cmake_find_package"] = "netCDF"
