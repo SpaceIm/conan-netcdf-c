@@ -13,7 +13,7 @@ class NetcdfConan(ConanFile):
     homepage = "https://github.com/Unidata/netcdf-c"
     url = "https://github.com/conan-io/conan-center-index"
     exports_sources = ["CMakeLists.txt", "patches/**"]
-    generators = "cmake"
+    generators = "cmake", "cmake_find_package"
     settings = "os", "arch", "compiler", "build_type"
     options = {
         "shared": [True, False],
@@ -77,7 +77,7 @@ class NetcdfConan(ConanFile):
         if self.options.hdf5:
             self.requires("hdf5/1.12.0")
         if self.options.dap:
-            self.requires("libcurl/7.70.0")
+            self.requires("libcurl/7.72.0")
         if self.options.parallel:
             self.requires("openmpi/4.0.3")
 
@@ -146,7 +146,7 @@ class NetcdfConan(ConanFile):
         return self._cmake
 
     def package(self):
-        self.copy("COPYING", dst="licenses", src=self._source_subfolder)
+        self.copy("COPYRIGHT", dst="licenses", src=self._source_subfolder)
         cmake = self._configure_cmake()
         cmake.install()
         os.remove(os.path.join(self.package_folder, "bin", "nc-config"))
@@ -161,6 +161,7 @@ class NetcdfConan(ConanFile):
         self.cpp_info.names["pkg_config"] = "netcdf"
         self.cpp_info.components["netcdf"].names["cmake_find_package"] = "netcdf"
         self.cpp_info.components["netcdf"].names["cmake_find_package_multi"] = "netcdf"
+        self.cpp_info.components["netcdf"].names["pkg_config"] = "netcdf"
         self.cpp_info.components["netcdf"].libs = tools.collect_libs(self)
         if self.options.hdf4:
             self.cpp_info.components["netcdf"].requires.append("hdf4::hdf4")
@@ -171,6 +172,6 @@ class NetcdfConan(ConanFile):
         if self.options.parallel:
             self.cpp_info.components["netcdf"].requires.append("openmpi::openmpi")
         if self.settings.os == "Linux":
-            self.cpp_info.components["netcdf"].system_libs.append("m")
+            self.cpp_info.components["netcdf"].system_libs = ["m"]
         if self.settings.os == "Windows" and self.options.shared:
             self.cpp_info.components["netcdf"].defines.append("DLL_NETCDF")

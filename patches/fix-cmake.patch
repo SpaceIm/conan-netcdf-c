@@ -1,0 +1,75 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -85,8 +85,7 @@ IF(MSVC)
+ ENDIF()
+ 
+ #Add custom CMake Module
+-SET(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/"
+-  CACHE INTERNAL "Location of our custom CMake modules.")
++SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
+ 
+ # auto-configure style checks, other CMake modules.
+ INCLUDE(CheckLibraryExists)
+@@ -441,6 +440,11 @@ ENDIF()
+ OPTION(ENABLE_HDF4 "Build netCDF-4 with HDF4 read capability(HDF4, HDF5 and Zlib required)." OFF)
+ IF(ENABLE_HDF4)
+   SET(USE_HDF4 ON)
++  SET(HAVE_LIBMFHDF TRUE)
++  SET(HAVE_LIBJPEG ON)
++  link_libraries(CONAN_PKG::hdf4)
++ENDIF()
++IF(FALSE)
+   # Check for include files, libraries.
+ 
+   FIND_PATH(MFHDF_H_INCLUDE_DIR mfhdf.h)
+@@ -576,13 +580,14 @@ OPTION(USE_HDF5 "Use HDF5." ${ENABLE_NETCDF_4})
+ IF(USE_HDF5 OR ENABLE_NETCDF_4)
+   SET(USE_HDF5 ON)
+   SET(USE_NETCDF4 ON)
++  link_libraries(CONAN_PKG::hdf5)
+   ##
+   # Accommodate developers who have hdf5 libraries and
+   # headers on their system, but do not have a the hdf
+   # .cmake files.  If this is the case, they should
+   # specify HDF5_HL_LIBRARY, HDF5_LIBRARY, HDF5_INCLUDE_DIR manually.
+   ##
+-  IF(HDF5_C_LIBRARY AND HDF5_HL_LIBRARY AND HDF5_INCLUDE_DIR)
++  IF(TRUE)
+     SET(HDF5_LIBRARIES ${HDF5_C_LIBRARY} ${HDF5_HL_LIBRARY})
+     SET(HDF5_C_LIBRARIES ${HDF5_C_LIBRARY})
+     SET(HDF5_C_LIBRARY_hdf5 ${HDF5_C_LIBRARY})
+@@ -717,6 +722,7 @@ IF(USE_HDF5 OR ENABLE_NETCDF_4)
+   # Use H5Pset_fapl_mpio and H5Pget_fapl_mpio, instead.
+   # CHECK_LIBRARY_EXISTS(${HDF5_C_LIBRARY_hdf5} H5Pget_fapl_mpiposix "" HDF5_IS_PARALLEL_MPIPOSIX)
+ 
++  SET(HDF5_C_LIBRARY_hdf5 ${CONAN_LIBS_HDF5})
+   CHECK_LIBRARY_EXISTS(${HDF5_C_LIBRARY_hdf5} H5Pget_fapl_mpio "" HDF5_IS_PARALLEL_MPIO)
+   IF(HDF5_IS_PARALLEL_MPIO)
+     SET(HDF5_PARALLEL ON)
+@@ -754,6 +760,7 @@ IF(USE_HDF5 OR ENABLE_NETCDF_4)
+ 
+   # Check to see if this is hdf5-1.10.3 or later.
+   CHECK_LIBRARY_EXISTS(${HDF5_C_LIBRARY_hdf5} H5Dread_chunk "" HDF5_SUPPORTS_PAR_FILTERS)
++  SET(HDF5_C_LIBRARY_hdf5)
+ 
+   SET(H5_USE_16_API 1)
+   OPTION(NC_ENABLE_HDF_16_API "Enable HDF5 1.6.x Compatibility(Required)" ON)
+@@ -789,8 +796,8 @@ ENDIF(USE_HDF5 OR ENABLE_NETCDF_4)
+ 
+ # See if we have libcurl
+ FIND_PACKAGE(CURL)
+-ADD_DEFINITIONS(-DCURL_STATICLIB=1)
+ INCLUDE_DIRECTORIES(${CURL_INCLUDE_DIRS})
++link_libraries(CONAN_PKG::libcurl)
+ 
+ # Check to see if CURLOPT_USERNAME is defined.
+ # It is present starting version 7.19.1.
+@@ -854,7 +861,7 @@ ENDIF()
+ # Option to support byte-range reading of remote datasets
+ OPTION(ENABLE_BYTERANGE "Enable byte-range access to remote datasets.." OFF)
+ 
+-IF(NOT CURL_LIBRARY)
++IF(NOT CURL_FOUND)
+   IF(ENABLE_BYTERANGE)
+     MESSAGE(FATAL_ERROR "Byte-range support specified, CURL libraries are not found.")
+   ENDIF()
